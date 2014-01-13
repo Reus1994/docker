@@ -993,3 +993,7 @@ func ValidateContextDirectory(srcPath string) error {
 	})
 	return finalError
 }
+
+func IsInBytesSubsystem(subsystem string) bool {
+	return strings.Contains(subsystem, "in_bytes")
+}
