@@ -150,6 +150,8 @@ func InitServer(job *engine.Job) engine.Status {
 		"events":           srv.Events,
 		"push":             srv.ImagePush,
 		"containers":       srv.Containers,
+		"cgroup":           srv.ContainerCgroup,
+		"metric":           srv.ContainerMetric,
 	} {
 		if err := job.Eng.Register(name, srv.handlerWrap(handler)); err != nil {
 			return job.Error(err)
@@ -2376,6 +2378,127 @@ func (srv *Server) ContainerCopy(job *engine.Job) engine.Status {
 		if _, err := io.Copy(job.Stdout, data); err != nil {
 			return job.Error(err)
 		}
+		return engine.StatusOK
+	}
+	return job.Errorf("No such container: %s", name)
+}
+
+func (srv *Server) ContainerCgroup(job *engine.Job) engine.Status {
+	if len(job.Args) != 1 {
+		return job.Errorf("Usage: %s CONTAINER\n", job.Name)
+	}
+
+	var (
+		name           = job.Args[0]
+		saveToFile     = job.GetenvBool("saveToFile")
+		readSubsystem  = job.GetenvList("readSubsystem")
+		writeSubsystem []struct {
+			Key   string
+			Value string
+		}
+	)
+
+	job.GetenvJson("writeSubsystem", &writeSubsystem)
+
+	utils.Debugf("name %s, saveToFile %s, readSubsystem %s, writeSubsystem %s", name, saveToFile, readSubsystem, writeSubsystem)
+
+	if container := srv.daemon.Get(name); container != nil {
+		if !container.State.IsRunning() {
+			return job.Errorf("Container %s is not running", name)
+		}
+
+		var object []interface{}
+
+		// read
+		for _, subsystem := range readSubsystem {
+			var cgroupResponse struct {
+				Subsystem string
+				Out       string
+				Err       string
+				Status    int
+			}
+
+			cgroupResponse.Subsystem = subsystem
+			output, err := srv.daemon.ExecutionDriver().GetCgroupSubsystem(container.ID, subsystem)
+			if err != nil {
+				cgroupResponse.Err = output
+				cgroupResponse.Status = 255
+			} else {
+				cgroupResponse.Out = output
+				cgroupResponse.Status = 0
+			}
+			object = append(object, cgroupResponse)
+		}
+
+		// write
+		for _, pair := range writeSubsystem {
+			var cgroupResponse struct {
+				Subsystem string
+				Out       string
+				Err       string
+				Status    int
+			}
+
+			cgroupResponse.Subsystem = pair.Key
+			output, err := srv.daemon.ExecutionDriver().SetCgroupSubsystem(container.ID, pair.Key, pair.Value)
+			if err != nil {
+				cgroupResponse.Err = output
+				cgroupResponse.Status = 255
+			} else {
+				cgroupResponse.Out = output
+				cgroupResponse.Status = 0
+				if saveToFile {
+					container.AddLXCConfig(pair.Key, pair.Value)
+				}
+
+			}
+			object = append(object, cgroupResponse)
+		}
+
+		if saveToFile {
+			if err := container.ToDisk(); err != nil {
+				return job.Error(err)
+			}
+
+			if err := container.GenerateLXCConfig(); err != nil {
+				return job.Error(err)
+			}
+		}
+
+		b, err := json.Marshal(object)
+		if err != nil {
+			return job.Error(err)
+		}
+
+		job.Stdout.Write(b)
+		return engine.StatusOK
+	}
+	return job.Errorf("No such container: %s", name)
+}
+
+func (srv *Server) ContainerMetric(job *engine.Job) engine.Status {
+	if len(job.Args) != 1 {
+		return job.Errorf("Usage: %s CONTAINER\n", job.Name)
+	}
+
+	var name = job.Args[0]
+
+	if container := srv.daemon.Get(name); container != nil {
+		if !container.State.IsRunning() {
+			return job.Errorf("Container %s is not running", name)
+		}
+
+		metric, err := srv.daemon.GetMetric(container)
+		if err != nil {
+			return job.Error(err)
+		}
+
+		b, err := json.Marshal(metric)
+		if err != nil {
+			return job.Error(err)
+		}
+		job.Stdout.Write(b)
+
 		return engine.StatusOK
 	}
 	return job.Errorf("No such container: %s", name)

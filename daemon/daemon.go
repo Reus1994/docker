@@ -25,6 +25,8 @@ import (
 	"github.com/dotcloud/docker/engine"
 	"github.com/dotcloud/docker/graph"
 	"github.com/dotcloud/docker/image"
+	"github.com/dotcloud/docker/metricdriver"
+	_ "github.com/dotcloud/docker/metricdriver/lxc"
 	"github.com/dotcloud/docker/pkg/graphdb"
 	"github.com/dotcloud/docker/pkg/label"
 	"github.com/dotcloud/docker/pkg/namesgenerator"
@@ -94,6 +96,7 @@ type Daemon struct {
 	containerGraph *graphdb.Database
 	driver         graphdriver.Driver
 	execDriver     execdriver.Driver
+	metricDriver   metricdriver.Driver
 }
 
 // Install installs daemon capabilities to eng.
@@ -862,6 +865,12 @@ func NewDaemonFromDirectory(config *daemonconfig.Config, eng *engine.Engine) (*D
 		return nil, err
 	}
 
+	md, err := metricdriver.GetDriver("lxc")
+	if err != nil {
+		return nil, err
+	}
+	utils.Debugf("Using mertic driver lxc")
+
 	daemon := &Daemon{
 		repository:     daemonRepo,
 		containers:     &contStore{s: make(map[string]*Container)},
@@ -876,6 +885,7 @@ func NewDaemonFromDirectory(config *daemonconfig.Config, eng *engine.Engine) (*D
 		sysInitPath:    sysInitPath,
 		execDriver:     ed,
 		eng:            eng,
+		metricDriver:   md,
 	}
 
 	if err := daemon.checkLocaldns(); err != nil {
@@ -1021,6 +1031,10 @@ func (daemon *Daemon) Kill(c *Container, sig int) error {
 	return daemon.execDriver.Kill(c.command, sig)
 }
 
+func (daemon *Daemon) UpdateConfig(c *Container) error {
+	return daemon.execDriver.UpdateConfig(c.command)
+}
+
 // Nuke kills all containers then removes all content
 // from the content root, including images, volumes and
 // container filesystems.
@@ -1094,4 +1108,8 @@ func (daemon *Daemon) checkLocaldns() error {
 		daemon.config.Dns = DefaultDns
 	}
 	return nil
+}
+
+func (daemon *Daemon) GetMetric(c *Container) (*metricdriver.Metric, error) {
+	return daemon.metricDriver.Get(c.ID)
 }
