@@ -689,3 +689,7 @@ func Matches(relFilePath string, patterns []string) (bool, error) {
 	}
 	return false, nil
 }
+
+func IsInBytesSubsystem(subsystem string) bool {
+	return strings.Contains(subsystem, "in_bytes")
+}

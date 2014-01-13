@@ -527,3 +527,35 @@ func (t *TtyConsole) Close() error {
 	t.SlavePty.Close()
 	return t.MasterPty.Close()
 }
+
+func (d *driver) GetCgroupSubsystem(id, subsystem string) (string, error) {
+
+	subsystem = utils.RemoveLXCCgroupPrefix(subsystem)
+	output, err := exec.Command("lxc-cgroup", "-n", id, subsystem).CombinedOutput()
+
+	if err != nil {
+		utils.Debugf("Error with lxc-cgroup: %s (%s)", err, output)
+	}
+
+	return strings.TrimSuffix(string(output), "\n"), err
+}
+
+func (d *driver) SetCgroupSubsystem(id, subsystem, value string) (string, error) {
+
+	subsystem = utils.RemoveLXCCgroupPrefix(subsystem)
+	output, err := exec.Command("lxc-cgroup", "-n", id, subsystem, value).CombinedOutput()
+
+	if err != nil {
+		utils.Debugf("Error with lxc-cgroup: %s (%s)", err, output)
+	}
+
+	return strings.TrimSuffix(string(output), "\n"), err
+}
+
+func (d *driver) UpdateConfig(c *execdriver.Command) error {
+	_, err := d.generateLXCConfig(c)
+	if err != nil {
+		return err
+	}
+	return nil
+}
