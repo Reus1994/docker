@@ -92,6 +92,7 @@ type Driver interface {
 	GetCgroupSubsystem(id, subsystem string) (string, error)
 	SetCgroupSubsystem(id, subsystem, value string) (string, error)
 	UpdateConfig(c *Command) error
+	Parent() string
 }
 
 // Network settings of the container
