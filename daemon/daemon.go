@@ -18,6 +18,7 @@ import (
 	"github.com/dotcloud/docker/daemon/execdriver/lxc"
 	"github.com/dotcloud/docker/daemon/graphdriver"
 	_ "github.com/dotcloud/docker/daemon/graphdriver/vfs"
+	"github.com/dotcloud/docker/daemon/metricdriver"
 	_ "github.com/dotcloud/docker/daemon/networkdriver/bridge"
 	"github.com/dotcloud/docker/daemon/networkdriver/portallocator"
 	"github.com/dotcloud/docker/daemonconfig"
@@ -25,8 +26,6 @@ import (
 	"github.com/dotcloud/docker/engine"
 	"github.com/dotcloud/docker/graph"
 	"github.com/dotcloud/docker/image"
-	"github.com/dotcloud/docker/metricdriver"
-	_ "github.com/dotcloud/docker/metricdriver/lxc"
 	"github.com/dotcloud/docker/pkg/graphdb"
 	"github.com/dotcloud/docker/pkg/label"
 	"github.com/dotcloud/docker/pkg/namesgenerator"
@@ -96,7 +95,6 @@ type Daemon struct {
 	containerGraph *graphdb.Database
 	driver         graphdriver.Driver
 	execDriver     execdriver.Driver
-	metricDriver   metricdriver.Driver
 }
 
 // Install installs daemon capabilities to eng.
@@ -865,12 +863,6 @@ func NewDaemonFromDirectory(config *daemonconfig.Config, eng *engine.Engine) (*D
 		return nil, err
 	}
 
-	md, err := metricdriver.GetDriver("lxc")
-	if err != nil {
-		return nil, err
-	}
-	utils.Debugf("Using mertic driver lxc")
-
 	daemon := &Daemon{
 		repository:     daemonRepo,
 		containers:     &contStore{s: make(map[string]*Container)},
@@ -885,7 +877,6 @@ func NewDaemonFromDirectory(config *daemonconfig.Config, eng *engine.Engine) (*D
 		sysInitPath:    sysInitPath,
 		execDriver:     ed,
 		eng:            eng,
-		metricDriver:   md,
 	}
 
 	if err := daemon.checkLocaldns(); err != nil {
@@ -1110,6 +1101,6 @@ func (daemon *Daemon) checkLocaldns() error {
 	return nil
 }
 
-func (daemon *Daemon) GetMetric(c *Container) (*metricdriver.Metric, error) {
-	return daemon.metricDriver.Get(c.ID)
+func (daemon *Daemon) GetMetric(c *Container) (map[string]map[string]float64, error) {
+	return metricdriver.Get(c.ID, daemon.ExecutionDriver().Parent(), c.State.Pid)
 }
