@@ -457,6 +457,7 @@ func (d *driver) generateEnvConfig(c *execdriver.Command) error {
 	return ioutil.WriteFile(p, data, 0600)
 }
 
+<<<<<<< HEAD
 type TtyConsole struct {
 	MasterPty *os.File
 	SlavePty  *os.File

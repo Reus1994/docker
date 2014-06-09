@@ -12,6 +12,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/docker/libcontainer/cgroups"
 	"github.com/docker/libcontainer/label"
 
 	"github.com/docker/docker/archive"
@@ -994,10 +995,6 @@ func (daemon *Daemon) Kill(c *Container, sig int) error {
 	return daemon.execDriver.Kill(c.command, sig)
 }
 
-func (daemon *Daemon) UpdateConfig(c *Container) error {
-	return daemon.execDriver.UpdateConfig(c.command)
-}
-
 // Nuke kills all containers then removes all content
 // from the content root, including images, volumes and
 // container filesystems.
@@ -1070,6 +1067,7 @@ func (daemon *Daemon) checkLocaldns() error {
 	return nil
 }
 
+<<<<<<< HEAD
 func (daemon *Daemon) ImageGetCached(imgID string, config *runconfig.Config) (*image.Image, error) {
 	// Retrieve all images
 	images, err := daemon.Graph().Map()
@@ -1126,6 +1124,6 @@ func checkKernelAndArch() error {
 	return nil
 }
 
-func (daemon *Daemon) GetMetric(c *Container) (map[string]map[string]float64, error) {
-	return metricdriver.Get(c.ID, daemon.ExecutionDriver().Parent(), c.State.Pid)
+func (daemon *Daemon) GetMetric(c *Container) (*cgroups.Stats, error) {
+	return metricdriver.Get(c.ID, daemon.ExecutionDriver().Parent())
 }
