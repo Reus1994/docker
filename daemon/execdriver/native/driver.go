@@ -274,26 +274,6 @@ func getTerminal(c *execdriver.Command, pipes *execdriver.Pipes) namespaces.Term
 	return term
 }
 
-func (d *driver) GetCgroupSubsystem(id, subsystem string) (string, error) {
-	panic("Not implemented")
-}
-
-func (d *driver) SetCgroupSubsystem(id, subsystem, value string) (string, error) {
-	panic("Not implemented")
-}
-
-func (d *driver) UpdateConfig(c *execdriver.Command) error {
-	panic("Not implemented")
-}
-
-func (d *driver) Suspend(c *execdriver.Command) error {
-	panic("Not implemented")
-}
-
-func (d *driver) Resume(c *execdriver.Command) error {
-	panic("Not implemented")
-}
-
 func (d *driver) Parent() string {
 	return "docker"
 }

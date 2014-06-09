@@ -2237,7 +2237,6 @@ func (cli *DockerCli) CmdLoad(args ...string) error {
 
 func (cli *DockerCli) CmdCgroup(args ...string) error {
 	cmd := cli.Subcmd("cgroup", "[OPTIONS] CONTAINER SUBSYSTEM=[VALUE]...", "Set or get cgroup subsystems on a container")
-	flSaveToFile := cmd.Bool([]string{"#w", "-w"}, false, "Save change to rcFile")
 
 	if err := cmd.Parse(args); err != nil {
 		return nil
@@ -2278,9 +2277,6 @@ func (cli *DockerCli) CmdCgroup(args ...string) error {
 	var encounteredError error
 
 	v := url.Values{}
-	if *flSaveToFile {
-		v.Set("w", "1")
-	}
 
 	body, _, err := readBody(cli.call("POST", "/containers/"+name+"/cgroup?"+v.Encode(), cgroupData, false))
 

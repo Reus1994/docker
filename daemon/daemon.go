@@ -28,6 +28,7 @@ import (
 	"github.com/dotcloud/docker/image"
 	"github.com/dotcloud/docker/pkg/graphdb"
 	"github.com/dotcloud/docker/pkg/label"
+	"github.com/dotcloud/docker/pkg/libcontainer/cgroups"
 	"github.com/dotcloud/docker/pkg/namesgenerator"
 	"github.com/dotcloud/docker/pkg/networkfs/resolvconf"
 	"github.com/dotcloud/docker/pkg/selinux"
@@ -1022,10 +1023,6 @@ func (daemon *Daemon) Kill(c *Container, sig int) error {
 	return daemon.execDriver.Kill(c.command, sig)
 }
 
-func (daemon *Daemon) UpdateConfig(c *Container) error {
-	return daemon.execDriver.UpdateConfig(c.command)
-}
-
 // Nuke kills all containers then removes all content
 // from the content root, including images, volumes and
 // container filesystems.
@@ -1101,6 +1098,6 @@ func (daemon *Daemon) checkLocaldns() error {
 	return nil
 }
 
-func (daemon *Daemon) GetMetric(c *Container) (map[string]map[string]float64, error) {
-	return metricdriver.Get(c.ID, daemon.ExecutionDriver().Parent(), c.State.Pid)
+func (daemon *Daemon) GetMetric(c *Container) (*cgroups.Stats, error) {
+	return metricdriver.Get(c.ID, daemon.ExecutionDriver().Parent())
 }
