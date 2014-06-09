@@ -1124,14 +1124,14 @@ func TestPostContainersCopyWhenContainerNotFound(t *testing.T) {
 
 func TestPostContainersCgroup(t *testing.T) {
 	eng := NewTestEngine(t)
-	defer mkRuntimeFromEngine(eng, t).Nuke()
+	defer mkDaemonFromEngine(eng, t).Nuke()
 
-	memory := int64(524288)
+	memory := int64(1048576)
 	containerID := createTestContainer(eng,
 		&runconfig.Config{
 			Memory:    memory,
 			Image:     unitTestImageID,
-			Cmd:       []string{"/bin/top"},
+			Cmd:       []string{"/bin/cat"},
 			OpenStdin: true,
 		},
 		t,
@@ -1164,7 +1164,7 @@ func TestPostContainersCgroup(t *testing.T) {
 	writeSubsystem = append(writeSubsystem, struct {
 		Key   string
 		Value string
-	}{Key: "cpuset.cpus", Value: "0"})
+	}{Key: "cpu.shares", Value: "2048"})
 	cgroupData.SetList("ReadSubsystem", readSubsystem)
 	cgroupData.SetJson("WriteSubsystem", writeSubsystem)
 
@@ -1174,7 +1174,7 @@ func TestPostContainersCgroup(t *testing.T) {
 	}
 
 	r := httptest.NewRecorder()
-	req, err := http.NewRequest("POST", "/containers/"+containerID+"/cgroup?w=1", jsonData)
+	req, err := http.NewRequest("POST", "/containers/"+containerID+"/cgroup", jsonData)
 	req.Header.Add("Content-Type", "application/json")
 	if err != nil {
 		t.Fatal(err)
