@@ -40,8 +40,9 @@ func (s *CpuacctGroup) Remove(d *data) error {
 
 func (s *CpuacctGroup) GetStats(path string, stats *cgroups.Stats) error {
 	var (
-		err                                                                                                           error
-		startCpu, lastCpu, startSystem, lastSystem, startUsage, lastUsage, kernelModeUsage, userModeUsage, percentage uint64
+		err                                                                                               error
+		startCpu, lastCpu, startSystem, lastSystem, startUsage, lastUsage, kernelModeUsage, userModeUsage uint64
+		percentage                                                                                        float64
 	)
 	if kernelModeUsage, userModeUsage, err = getCpuUsage(path); err != nil {
 		return err
@@ -74,13 +75,13 @@ func (s *CpuacctGroup) GetStats(path string, stats *cgroups.Stats) error {
 		deltaUsage  = lastUsage - startUsage
 	)
 	if deltaSystem > 0.0 {
-		percentage = uint64((float64(deltaProc) / float64(deltaSystem)) * float64(clockTicks*cpuCount))
+		percentage = ((float64(deltaProc) / float64(deltaSystem)) * float64(clockTicks)) * float64(cpuCount)
 	}
 	// NOTE: a percentage over 100% is valid for POSIX because that means the
 	// processes is using multiple cores
 	stats.CpuStats.CpuUsage.PercentUsage = percentage
 	// Delta usage is in nanoseconds of CPU time so get the usage (in cores) over the sample time.
-	stats.CpuStats.CpuUsage.CurrentUsage = deltaUsage / uint64(usageSampleDuration.Nanoseconds())
+	stats.CpuStats.CpuUsage.CurrentUsage = float64(deltaUsage) / float64(usageSampleDuration.Nanoseconds())
 	percpuUsage, err := getPercpuUsage(path)
 	if err != nil {
 		return err

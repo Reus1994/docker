@@ -11,9 +11,9 @@ type ThrottlingData struct {
 
 type CpuUsage struct {
 	// percentage of available CPUs currently being used.
-	PercentUsage uint64 `json:"percent_usage,omitempty"`
+	PercentUsage float64 `json:"percent_usage,omitempty"`
 	// nanoseconds of cpu time consumed over the last 100 ms.
-	CurrentUsage uint64 `json:"current_usage,omitempty"`
+	CurrentUsage float64 `json:"current_usage,omitempty"`
 	// total nanoseconds of cpu time consumed
 	TotalUsage  uint64   `json:"total_usage,omitempty"`
 	PercpuUsage []uint64 `json:"percpu_usage,omitempty"`
