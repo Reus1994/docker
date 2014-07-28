@@ -152,3 +152,14 @@ type Command struct {
 func (c *Command) Pid() int {
 	return c.ContainerPid
 }
+
+func Exec(id, command string, args []string) ([]byte, error) {
+	execArgs := []string{id, command}
+	execArgs = append(execArgs, args...)
+	cmd := exec.Command("docker-enter", execArgs...)
+	output, err := cmd.CombinedOutput()
+	// if err != nil {
+	// 	return output, errors.New(string(output))
+	// }
+	return output, err
+}

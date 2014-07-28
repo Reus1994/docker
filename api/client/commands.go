@@ -60,6 +60,7 @@ func (cli *DockerCli) CmdHelp(args ...string) error {
 		{"cp", "Copy files/folders from a container's filesystem to the host path"},
 		{"diff", "Inspect changes on a container's filesystem"},
 		{"events", "Get real time events from the server"},
+		{"exec", "Execute command in a container"},
 		{"export", "Stream the contents of a container as a tar archive"},
 		{"history", "Show the history of an image"},
 		{"images", "List images"},
@@ -2313,6 +2314,33 @@ func (cli *DockerCli) CmdMetric(args ...string) error {
 	}
 	name := cmd.Arg(0)
 	body, _, err := readBody(cli.call("GET", "/containers/"+name+"/metric", nil, false))
+	if err != nil {
+		return err
+	}
+
+	fmt.Println(string(body))
+
+	return nil
+}
+
+func (cli *DockerCli) CmdExec(args ...string) error {
+	cmd := cli.Subcmd("exec", "CONTAINER COMMAND [ARGS...]", "Execute command in a container")
+	if err := cmd.Parse(args); err != nil {
+		return nil
+	}
+	if cmd.NArg() < 2 {
+		cmd.Usage()
+		return nil
+	}
+	name := cmd.Arg(0)
+	command := cmd.Arg(1)
+
+	var execData engine.Env
+
+	execData.Set("command", command)
+	execData.SetList("args", cmd.Args()[2:])
+
+	body, _, err := readBody(cli.call("POST", "/containers/"+name+"/exec", execData, false))
 	if err != nil {
 		return err
 	}
