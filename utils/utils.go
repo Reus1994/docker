@@ -997,3 +997,12 @@ func ValidateContextDirectory(srcPath string) error {
 func IsInBytesSubsystem(subsystem string) bool {
 	return strings.Contains(subsystem, "in_bytes")
 }
+
+func StringInSlice(str string, list []string) bool {
+	for _, e := range list {
+		if str == e {
+			return true
+		}
+	}
+	return false
+}

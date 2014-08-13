@@ -158,8 +158,5 @@ func Exec(id, command string, args []string) ([]byte, error) {
 	execArgs = append(execArgs, args...)
 	cmd := exec.Command("docker-enter", execArgs...)
 	output, err := cmd.CombinedOutput()
-	// if err != nil {
-	// 	return output, errors.New(string(output))
-	// }
 	return output, err
 }

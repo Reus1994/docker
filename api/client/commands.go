@@ -85,6 +85,7 @@ func (cli *DockerCli) CmdHelp(args ...string) error {
 		{"search", "Search for an image on the Docker Hub"},
 		{"start", "Start a stopped container"},
 		{"stop", "Stop a running container"},
+		{"sweep", "Stop and sweep a running container"},
 		{"tag", "Tag an image into a repository"},
 		{"top", "Lookup the running processes of a container"},
 		{"unpause", "Unpause a paused container"},
@@ -986,6 +987,7 @@ func (cli *DockerCli) CmdRm(args ...string) error {
 	v := cmd.Bool([]string{"v", "-volumes"}, false, "Remove the volumes associated with the container")
 	link := cmd.Bool([]string{"l", "#link", "-link"}, false, "Remove the specified link and not the underlying container")
 	force := cmd.Bool([]string{"f", "-force"}, false, "Force removal of running container")
+	checkDevice := cmd.Bool([]string{"c", "--check-device"}, false, "Check device opencount before remove containers")
 
 	if err := cmd.Parse(args); err != nil {
 		return nil
@@ -1003,6 +1005,9 @@ func (cli *DockerCli) CmdRm(args ...string) error {
 	}
 	if *force {
 		val.Set("force", "1")
+	}
+	if *checkDevice {
+		val.Set("checkDevice", "1")
 	}
 
 	var encounteredError error
@@ -2348,4 +2353,29 @@ func (cli *DockerCli) CmdExec(args ...string) error {
 	fmt.Println(string(body))
 
 	return nil
+}
+
+func (cli *DockerCli) CmdSweep(args ...string) error {
+	cmd := cli.Subcmd("sweep", "CONTAINER [CONTAINER...]", "Stop and sweep a running container")
+	if err := cmd.Parse(args); err != nil {
+		return nil
+	}
+
+	if cmd.NArg() < 1 {
+		cmd.Usage()
+		return nil
+	}
+
+	var encounteredError error
+	for _, name := range cmd.Args() {
+		_, _, err := readBody(cli.call("POST", "/containers/"+name+"/sweep", nil, false))
+		if err != nil {
+			fmt.Fprintf(cli.err, "%s\n", err)
+			encounteredError = fmt.Errorf("Error: failed to sweep one or more containers")
+		} else {
+			fmt.Fprintf(cli.out, "%s\n", name)
+		}
+	}
+
+	return encounteredError
 }
