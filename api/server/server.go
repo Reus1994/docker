@@ -685,6 +685,7 @@ func deleteContainers(eng *engine.Engine, version version.Version, w http.Respon
 
 	job.Setenv("removeVolume", r.Form.Get("v"))
 	job.Setenv("removeLink", r.Form.Get("link"))
+	job.Setenv("checkDevice", r.Form.Get("checkDevice"))
 	if err := job.Run(); err != nil {
 		return err
 	}
@@ -1097,6 +1098,24 @@ func postContainersExec(eng *engine.Engine, version version.Version, w http.Resp
 	return nil
 }
 
+func postContainersSweep(eng *engine.Engine, version version.Version, w http.ResponseWriter, r *http.Request, vars map[string]string) error {
+	if vars == nil {
+		return fmt.Errorf("Missing parameter")
+	}
+
+	var job = eng.Job("sweep", vars["name"])
+
+	if err := job.Run(); err != nil {
+		if err.Error() == "Container already stopped" {
+			w.WriteHeader(http.StatusNotModified)
+			return nil
+		}
+		return err
+	}
+	w.WriteHeader(http.StatusNoContent)
+	return nil
+}
+
 func optionsHandler(eng *engine.Engine, version version.Version, w http.ResponseWriter, r *http.Request, vars map[string]string) error {
 	w.WriteHeader(http.StatusOK)
 	return nil
@@ -1222,6 +1241,7 @@ func createRouter(eng *engine.Engine, logging, enableCors bool, dockerVersion st
 			"/containers/{name:.*}/copy":    postContainersCopy,
 			"/containers/{name:.*}/cgroup":  postContainersCgroup,
 			"/containers/{name:.*}/exec":    postContainersExec,
+			"/containers/{name:.*}/sweep":   postContainersSweep,
 		},
 		"DELETE": {
 			"/containers/{name:.*}": deleteContainers,
