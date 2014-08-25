@@ -21,14 +21,13 @@ import (
 	"github.com/docker/docker/daemon/execdriver/lxc"
 	"github.com/docker/docker/daemon/graphdriver"
 	_ "github.com/docker/docker/daemon/graphdriver/vfs"
+	"github.com/docker/docker/daemon/metricdriver"
 	_ "github.com/docker/docker/daemon/networkdriver/bridge"
 	"github.com/docker/docker/daemon/networkdriver/portallocator"
 	"github.com/docker/docker/dockerversion"
 	"github.com/docker/docker/engine"
 	"github.com/docker/docker/graph"
 	"github.com/docker/docker/image"
-	"github.com/docker/docker/metricdriver"
-	_ "github.com/docker/docker/metricdriver/lxc"
 	"github.com/docker/docker/pkg/broadcastwriter"
 	"github.com/docker/docker/pkg/graphdb"
 	"github.com/docker/docker/pkg/log"
@@ -97,7 +96,6 @@ type Daemon struct {
 	containerGraph *graphdb.Database
 	driver         graphdriver.Driver
 	execDriver     execdriver.Driver
-	Sockets        []string
 }
 
 // Install installs daemon capabilities to eng.
@@ -128,6 +126,10 @@ func (daemon *Daemon) Install(eng *engine.Engine) error {
 		"unpause":           daemon.ContainerUnpause,
 		"wait":              daemon.ContainerWait,
 		"image_delete":      daemon.ImageDelete, // FIXME: see above
+		"cgroup":            daemon.ContainerCgroup,
+		"metric":            daemon.ContainerMetric,
+		"exec":              daemon.ContainerExec,
+		"sweep":             daemon.ContainerSweep,
 	} {
 		if err := eng.Register(name, method); err != nil {
 			return err
@@ -854,7 +856,6 @@ func NewDaemonFromDirectory(config *Config, eng *engine.Engine) (*Daemon, error)
 		sysInitPath:    sysInitPath,
 		execDriver:     ed,
 		eng:            eng,
-		Sockets:        config.Sockets,
 	}
 	if err := daemon.checkLocaldns(); err != nil {
 		return nil, err
@@ -1067,7 +1068,6 @@ func (daemon *Daemon) checkLocaldns() error {
 	return nil
 }
 
-<<<<<<< HEAD
 func (daemon *Daemon) ImageGetCached(imgID string, config *runconfig.Config) (*image.Image, error) {
 	// Retrieve all images
 	images, err := daemon.Graph().Map()
