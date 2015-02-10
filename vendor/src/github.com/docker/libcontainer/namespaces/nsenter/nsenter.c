@@ -93,7 +93,7 @@ void nsenter()
 		{"console", required_argument, NULL, 't'},
 		{NULL, 0, NULL, 0}
 	};
-    
+
 	pid_t init_pid = -1;
 	char *init_pid_str = NULL;
 	char *console = NULL;
@@ -139,6 +139,11 @@ void nsenter()
 				console, strerror(errno));
 			exit(1);
 		}
+	}
+	// sync with parent, ensure the process has entered the cgroups
+	char sync[1];
+	if (read(3, sync, 1) != 1) {
+		fprintf(stderr, "nsenter: sync with parent fail %s\n", strerror(errno));
 	}
 	// Setns on all supported namespaces.
 	char ns_dir[PATH_MAX];

@@ -66,6 +66,10 @@ func ExecIn(container *libcontainer.Config, state *libcontainer.State, userArgs 
 		return -1, err
 	}
 
+	if _, err := pipe.Parent().Write([]byte{1}); err != nil {
+		return -1, err
+	}
+
 	if err := pipe.SendToChild(container); err != nil {
 		cmd.Process.Kill()
 		cmd.Wait()
