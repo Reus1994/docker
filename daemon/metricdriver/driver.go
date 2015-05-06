@@ -3,11 +3,12 @@ package metricdriver
 import (
 	"github.com/docker/libcontainer/cgroups"
 	"github.com/docker/libcontainer/cgroups/fs"
+	"github.com/docker/libcontainer/configs"
 )
 
 func Get(id, parent string, pid int) (*cgroups.Stats, error) {
 
-	c := &cgroups.Cgroup{
+	c := &configs.Cgroup{
 		Name:   id,
 		Parent: parent,
 	}

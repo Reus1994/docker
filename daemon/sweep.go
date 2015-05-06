@@ -10,16 +10,16 @@ func (daemon *Daemon) ContainerSweep(job *engine.Job) engine.Status {
 		name = job.Args[0]
 	)
 
-	if container := daemon.Get(name); container != nil {
-		if !container.State.IsRunning() {
-			return job.Errorf("Container already stopped")
-		}
-		if err := container.Sweep(job.Eng); err != nil {
-			return job.Errorf("Cannot cleanup container %s: %s\n", name, err)
-		}
-		container.LogEvent("sweep")
-	} else {
-		return job.Errorf("No such container: %s\n", name)
+	container, err := daemon.Get(name)
+	if err != nil {
+		return job.Error(err)
 	}
+	if !container.State.IsRunning() {
+		return job.Errorf("Container already stopped")
+	}
+	if err := container.Sweep(job.Eng); err != nil {
+		return job.Errorf("Cannot cleanup container %s: %s\n", name, err)
+	}
+	container.LogEvent("sweep")
 	return engine.StatusOK
 }

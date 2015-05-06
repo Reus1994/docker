@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/docker/libcontainer/cgroups"
+	"github.com/docker/libcontainer/configs"
 )
 
 var (
@@ -86,14 +87,14 @@ func getPath(id, driver, subsystem string) (string, error) {
 	return path, nil
 }
 
-func SetResources(c *cgroups.Cgroup, pid int) (*data, error) {
+func SetResources(c *configs.Cgroup, pid int) (*data, error) {
 	d, err := getCgroupData(c, pid)
 	if err != nil {
 		return nil, err
 	}
 
 	for _, sys := range supportedSubsystems {
-		if err := sys.Set(d); err != nil {
+		if err := sys.Apply(d); err != nil {
 			return nil, err
 		}
 	}
@@ -101,15 +102,14 @@ func SetResources(c *cgroups.Cgroup, pid int) (*data, error) {
 	return d, nil
 }
 
-func GetAllStats(c *cgroups.Cgroup, pid int) (*cgroups.Stats, error) {
+func GetAllStats(c *configs.Cgroup, pid int) (*cgroups.Stats, error) {
 	d, err := getCgroupData(c, pid)
 	if err != nil {
 		return nil, err
 	}
-
-	paths := make(map[string]string)
+	stats := cgroups.NewStats()
 	for name, sys := range subsystems {
-		if err := sys.Set(d); err != nil {
+		if err := sys.Apply(d); err != nil {
 			return nil, err
 		}
 		p, err := d.path(name)
@@ -119,8 +119,10 @@ func GetAllStats(c *cgroups.Cgroup, pid int) (*cgroups.Stats, error) {
 			}
 			return nil, err
 		}
-		paths[name] = p
+		if err := sys.GetStats(p, stats); err != nil {
+			return nil, err
+		}
 	}
 
-	return GetStats(paths)
+	return stats, nil
 }

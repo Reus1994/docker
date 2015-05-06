@@ -9,7 +9,7 @@ import (
 	"github.com/docker/docker/daemon/sweep"
 	"github.com/docker/docker/engine"
 	"github.com/docker/docker/pkg/broadcastwriter"
-	"github.com/docker/docker/utils"
+	"github.com/docker/docker/pkg/common"
 )
 
 func (container *Container) Sweep(eng *engine.Engine) error {
@@ -25,7 +25,7 @@ func (container *Container) Sweep(eng *engine.Engine) error {
 	}
 
 	execConfig := &execConfig{
-		ID:            utils.GenerateRandomID(),
+		ID:            common.GenerateRandomID(),
 		OpenStdin:     false,
 		OpenStdout:    false,
 		OpenStderr:    false,

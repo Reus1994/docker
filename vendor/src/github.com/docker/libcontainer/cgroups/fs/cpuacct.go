@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/docker/libcontainer/cgroups"
+	"github.com/docker/libcontainer/configs"
 	"github.com/docker/libcontainer/system"
 )
 
@@ -24,12 +25,16 @@ var clockTicks = uint64(system.GetClockTicks())
 type CpuacctGroup struct {
 }
 
-func (s *CpuacctGroup) Set(d *data) error {
+func (s *CpuacctGroup) Apply(d *data) error {
 	// we just want to join this group even though we don't set anything
 	if _, err := d.join("cpuacct"); err != nil && !cgroups.IsNotFound(err) {
 		return err
 	}
 
+	return nil
+}
+
+func (s *CpuacctGroup) Set(path string, cgroup *configs.Cgroup) error {
 	return nil
 }
 
